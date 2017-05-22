@@ -4,6 +4,10 @@ import time
 import os
 import dateutil.parser
 import logging
+import urllib
+import json
+
+geocode_url = 'https://maps.googleapis.com/maps/api/geocode/json?address={}&key=' + os.environ['GOOGLE_KEY']
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -113,6 +117,19 @@ def validate_request(slots):
     return {'isValid': True}
 
 
+def get_location(city):
+    r = urllib.request.urlopen(geocode_url.format(city))
+    response = r.read().decode('utf-8')
+    try:
+        data = json.loads(response)
+        # Todo check API errors
+        return data['results'][0]['geometry']['location']
+    except KeyError:
+        logger.error("Unable to parse response: {}".format(response))
+
+    return None
+
+
 """ --- Functions that control the bot's behavior --- """
 
 
@@ -126,17 +143,21 @@ def weather(intent_request):
     country = try_ex(lambda: intent_request['currentIntent']['slots']['Country'])
     date = try_ex(lambda: intent_request['currentIntent']['slots']['Date'])
 
-    session_attributes = intent_request['sessionAttributes'] if intent_request['sessionAttributes'] is not None else {}
-    user_data = json.dumps({
-        'city': city,
-        'country': country,
-        'date': date
-    })
-    session_attributes['user_data'] = user_data
+    session_attributes = intent_request.get('sessionAttributes') or {}
 
     if intent_request['invocationSource'] == 'DialogCodeHook':
         try:
             validate_request(intent_request['currentIntent']['slots'])
+
+            location = get_location(city)
+            if not location:
+                raise ValidationError('City', 'Unable to find city?')
+
+            session_attributes['location'] = json.dumps(location)
+            logger.debug('location={}'.format(json.dumps(location)))
+
+            # ...
+
         except ValidationError as err:
             slots = intent_request['currentIntent']['slots']
             slots[err.slot] = None
@@ -148,16 +169,17 @@ def weather(intent_request):
                 {'contentType': 'PlainText', 'content': err.message}
             )
 
+        logger.debug('delegate, session_attributes={}'.format(session_attributes))
         return delegate(session_attributes, intent_request['currentIntent']['slots'])
 
-    logger.debug('do stuff')
+    logger.debug('do stuff, session_attributes={}'.format(session_attributes))
 
     return close(
         session_attributes,
         'Fulfilled',
         {
             'contentType': 'PlainText',
-            'content': 'Done!!'
+            'content': 'Done! Your location is {}'.format(session_attributes['location'])
         }
     )
 

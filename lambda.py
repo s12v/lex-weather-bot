@@ -72,6 +72,12 @@ def provide_city():
     ])
 
 
+def provide_city_details():
+    return random.choice([
+        'I found several places with this name. Could you enter city again with country or state?',
+    ])
+
+
 def provide_date():
     return random.choice([
         'Please provide a date',
@@ -127,7 +133,12 @@ def get_location(city):
     try:
         data = json.loads(response)
         # Todo check API errors
-        return data['results'][0]['geometry']['location']
+        if len(data['results']) > 1:
+            raise ValidationError('City', provide_city_details())
+        return {
+            'location': data['results'][0]['geometry']['location'],
+            'formatted_address': data['results'][0]['formatted_address']
+        }
     except KeyError:
         logger.error("Unable to parse response: {}".format(response))
 
@@ -152,7 +163,7 @@ def get_weather(lat, lng, date_str):
     return None
 
 
-def get_weather_summary(weather, date):
+def get_weather_summary(weather, formatted_address, date):
     if date == 'now':
         now = weather.get('now')
         temp = round(now.get('temperature'))
@@ -202,7 +213,7 @@ def weather_request(intent_request):
         return delegate(session_attributes, intent_request['currentIntent']['slots'])
 
     location = json.loads(session_attributes['location'])
-    weather = get_weather(lat=location['lat'], lng=location['lng'], date_str=date)
+    weather = get_weather(lat=location['location']['lat'], lng=location['location']['lng'], date_str=date)
     logger.debug("Fulfill, session_attributes: {}".format(session_attributes))
 
     return close(
@@ -210,7 +221,7 @@ def weather_request(intent_request):
         'Fulfilled',
         {
             'contentType': 'PlainText',
-            'content': get_weather_summary(weather, date)
+            'content': get_weather_summary(weather, location['formatted_address'], date)
         }
     )
 

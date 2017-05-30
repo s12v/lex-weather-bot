@@ -7,6 +7,14 @@ provider:
   runtime: python3.6
   profile: lex
 
+package:
+  exclude:
+    - '**'
+  include:
+    - lambda.py
+
 functions:
   lexHandler:
     handler: lambda.lambda_handler
+    memorySize: 128
+    timeout: 15

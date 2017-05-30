@@ -68,13 +68,13 @@ def provide_city():
     return random.choice([
         'Please provide a city',
         'What is your city?',
-        'Weather in which city?'
+        'In which city?'
     ])
 
 
 def provide_date():
     return random.choice([
-        'Please provide a date or time',
+        'Please provide a date',
         'When?'
     ])
 
@@ -82,7 +82,9 @@ def provide_date():
 def help():
     return random.choice([
         "I'm a weather bot. I can provide weather forecast and historical data. For example, ask \"What is "
-        "the weather in Berlin?\", or \"What was the weather in Moscow on 1st of January?\""
+        "the weather in Berlin?\", or \"What was the weather in Moscow on 1st of January?\"",
+        "I'm a bot. I can provide historical weather data and forecasts. For example, ask \"What is "
+        "was the weather in Chicago yesterday?\", or \"What's the weather in Furnace Creek?\"",
     ])
 
 

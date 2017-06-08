@@ -204,7 +204,7 @@ def weather_request(intent_request):
         except ValidationError as err:
             slots[err.slot] = None
             return elicit_slot(
-                session_attributes,
+                {},
                 intent_request['currentIntent']['name'],
                 slots,
                 err.slot,

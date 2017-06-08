@@ -245,7 +245,9 @@ def about_request():
 def dispatch(intent_request):
     intent_name = intent_request['currentIntent']['name']
     if intent_name == 'Weather':
-        return weather_request(intent_request)
+        response = weather_request(intent_request)
+        logger.debug(json.dumps(response))
+        return response
     elif intent_name == 'About':
         return about_request()
 

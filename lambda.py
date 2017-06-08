@@ -72,9 +72,9 @@ def provide_city():
     ])
 
 
-def provide_city_details():
+def provide_area_details():
     return random.choice([
-        'I found several places with this name. Could you enter city again with country or state?',
+        'I found several places with this name. Could provide country or state?',
     ])
 
 
@@ -126,15 +126,16 @@ def validate_request(slots):
     return {'isValid': True}
 
 
-def get_location(city):
-    url = geocode_url.format(urllib.parse.quote(city, 'utf-8'))
+def get_location(city, area):
+    location = city + ", " + area if area else city
+    url = geocode_url.format(urllib.parse.quote(location, 'utf-8'))
     logger.debug("Loading {}".format(url))
     response = urllib.request.urlopen(url).read().decode('utf-8')
     try:
         data = json.loads(response)
         # Todo check API errors
         if len(data['results']) > 1:
-            raise ValidationError('City', provide_city_details())
+            raise ValidationError('Area', provide_area_details())
         return {
             'location': data['results'][0]['geometry']['location'],
             'formatted_address': data['results'][0]['formatted_address']
@@ -181,6 +182,7 @@ def weather_request(intent_request):
 
     slots = intent_request['currentIntent']['slots']
     city = slots.get('City')
+    area = slots.get('Area')
     date = slots.get('Date')
     time = slots.get('Time')
     if not date:
@@ -192,7 +194,7 @@ def weather_request(intent_request):
         try:
             validate_request(slots)
 
-            location = get_location(city)
+            location = get_location(city, area)
             if not location:
                 raise ValidationError('City', 'Unable to find city?')
 

@@ -74,7 +74,7 @@ def provide_city():
 
 def provide_area_details():
     return random.choice([
-        'I found several places with this name. Could provide country or state?',
+        'I found several places with this name. Could you provide country or state?',
     ])
 
 

@@ -87,10 +87,10 @@ def provide_date():
 
 def help():
     return random.choice([
-        "I'm a weather bot. I can provide weather forecast and historical data. For example, ask \"What is "
-        "the weather in Berlin?\", or \"What was the weather in Moscow on 1st of January?\"",
-        "I'm a bot. I can provide historical weather data and forecasts. For example, ask \"What is "
-        "was the weather in Chicago yesterday?\", or \"What's the weather in Furnace Creek?\"",
+        "I'm a weather bot. I can provide weather forecast and historical data. For example, ask \"Weather "
+        "in Berlin?\", or \"Weather in Moscow on 1st of January?\"",
+        "I'm a bot. I can provide historical weather data and forecasts. For example, ask \"What "
+        "was the weather in Chicago yesterday?\", or \"Weather in Furnace Creek?\"",
     ])
 
 

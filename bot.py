@@ -24,9 +24,9 @@ class WeatherBot:
         elif context.intent_name == LexContext.INTENT_WEATHER:
             response = self.__weather_request(context)
         else:
-            raise Exception('Intent with name ' + context.intent_name + ' not supported')
+            raise Exception('Intent with name {} not supported'.format(context.intent_name))
 
-        logger.debug('RESPONSE:' + json.dumps(response))
+        logger.debug('RESPONSE={}'.format(json.dumps(response)))
         return response
 
     @staticmethod

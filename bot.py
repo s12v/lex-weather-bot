@@ -1,6 +1,5 @@
 import logging
 import json
-import datetime
 from dateutil import parser as dateutil_parser
 
 from phrases import Phrases
@@ -8,7 +7,7 @@ from darsky import DarkSky, Weather
 from geocoder import Geocoder
 from lex import LexContext, LexResponses, ValidationError
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 

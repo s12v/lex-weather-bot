@@ -76,8 +76,8 @@ class WeatherBot:
         if not context.city():
             raise ValidationError(LexContext.SLOT_CITY, Phrases.provide_city())
 
-        if not context.date():
-            context.slots[LexContext.SLOT_DATE] = "now"
+        if not context.date() or context.date() == 'now':
+            context.slots[LexContext.SLOT_DATE] = 'now'
         elif not self.__is_valid_date(context.date()):
             raise ValidationError(LexContext.SLOT_DATE, 'I did not understand date. Could you please enter it again?')
 

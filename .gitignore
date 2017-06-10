@@ -1,4 +1,4 @@
 .idea
 .serverless
-weatherbot.iml
-
+*.iml
+__pycache__

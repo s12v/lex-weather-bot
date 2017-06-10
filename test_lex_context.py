@@ -1,3 +1,4 @@
+from dateutil import parser as date_parser
 import unittest
 
 from lex import LexContext
@@ -23,3 +24,31 @@ class LexContextTest(unittest.TestCase):
         self.assertEqual(lex.city(), 'Berlin')
         self.assertIsNone(lex.time())
         self.assertIsNone(lex.area())
+
+    def test_tomorrow_evening(self):
+        lex = LexContext(
+            {
+                "messageVersion": "1.0",
+                "invocationSource": "FulfillmentCodeHook",
+                "userId": "eish8ui7ahTh0ohyah2koh4iexahheih",
+                "sessionAttributes": {},
+                "bot": {
+                    "name": "WeatherBot",
+                    "alias": None,
+                    "version": "$LATEST"
+                },
+                "outputDialogMode": "Text",
+                "currentIntent": {
+                    "name": "Weather",
+                    "slots": {
+                        "Area": None,
+                        "Time": "EV",
+                        "City": "Berlin",
+                        "Date": "2017-06-11"
+                    },
+                    "confirmationStatus": "None"
+                },
+                "inputTranscript": "weather tomorrow evening in Berlin"
+            }
+        )
+        self.assertEqual(lex.timestamp(), date_parser.parse('2017-06-11 19:00').timestamp())

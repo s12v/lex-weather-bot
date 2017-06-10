@@ -1,9 +1,10 @@
 import logging
 import json
-import dateutil.parser
+import datetime
+from dateutil import parser as dateutil_parser
 
 from phrases import Phrases
-from darsky import DarkSky
+from darsky import DarkSky, Weather
 from geocoder import Geocoder
 from lex import LexContext, LexResponses, ValidationError
 
@@ -59,18 +60,18 @@ class WeatherBot:
         )
 
     @staticmethod
-    def __get_weather_summary(context: LexContext, weather: dict) -> str:
+    def __get_weather_summary(context: LexContext, weather: Weather) -> str:
         if context.date() == 'now':
-            now = weather.get('now')
-            temp = round(now.get('temperature'))
-            summary = now.get('summary')
-            return "Currently it's {} degrees. {}".format(temp, summary)
+            return "Currently it's {} degrees. {}".format(round(weather.now.temp), weather.now.summary)
+        elif context.time():
+            hi = datetime.datetime.fromtimestamp(context.timestamp()).strftime('%H:%M')
+            return "At {} it's {} degrees. {}".format(hi, round(weather.now.temp), weather.now.summary)
         else:
-            day = weather.get('day')
-            min_temp = round(day.get('temperatureMin'))
-            max_temp = round(day.get('temperatureMax'))
-            summary = day.get('summary')
-            return "{} to {} degrees. {}".format(min_temp, max_temp, summary)
+            return '{} to {} degrees. {}'.format(
+                round(weather.day.temp_min),
+                round(weather.day.temp_max),
+                weather.day.summary
+            )
 
     def __validate(self, context: LexContext):
         if not context.city():
@@ -97,7 +98,7 @@ class WeatherBot:
     @staticmethod
     def __is_valid_date(date: str) -> bool:
         try:
-            dateutil.parser.parse(date)
+            dateutil_parser.parse(date)
             return True
         except ValueError:
             return False

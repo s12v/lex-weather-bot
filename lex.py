@@ -1,6 +1,6 @@
-import json
-import dateutil.parser
 import datetime
+import json
+from dateutil import parser as date_parser
 
 
 class ValidationError(Exception):
@@ -31,10 +31,18 @@ class LexContext:
             date = datetime.datetime.now()
         else:
             if self.time():
+                if self.time() == 'MO':
+                    self.__set_time('09:00')
+                elif self.time() == 'AF':
+                    self.__set_time('14:00')
+                elif self.time() == 'EV':
+                    self.__set_time('19:00')
+                elif self.time() == 'NI':
+                    self.__set_time('23:00')
                 date_str = '{} {}'.format(self.date(), self.time())
             else:
                 date_str = self.date()
-            date = dateutil.parser.parse(date_str)
+            date = date_parser.parse(date_str)
         return int(date.timestamp())
 
     def lat(self) -> float:
@@ -54,6 +62,9 @@ class LexContext:
 
     def time(self) -> str:
         return self.slots.get(self.SLOT_TIME)
+
+    def __set_time(self, time: str):
+        self.slots[self.SLOT_TIME] = time
 
     def city(self) -> str:
         return self.slots.get(self.SLOT_CITY)

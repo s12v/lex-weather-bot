@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from bot import WeatherBot
-from darsky import DarkSky
+from darsky import DarkSky, Weather, WeatherAtTime, WeatherDay
 from geocoder import Geocoder
 
 
@@ -63,9 +63,43 @@ class WeatherBotTest(unittest.TestCase):
         )
         self.assertEqual(result['dialogAction']['type'], 'Delegate')
 
+    def test_tomorrow_evening(self):
+        result = self.__new_bot().dispatch(
+            {
+                "messageVersion": "1.0",
+                "invocationSource": "FulfillmentCodeHook",
+                "userId": "eish8ui7ahTh0ohyah2koh4iexahheih",
+                "sessionAttributes": {
+                    'location': '{\"lat\": 52.52000659999999, \"lng\": 13.404954}'
+                },
+                "bot": {
+                    "name": "WeatherBot",
+                    "alias": None,
+                    "version": "$LATEST"
+                },
+                "outputDialogMode": "Text",
+                "currentIntent": {
+                    "name": "Weather",
+                    "slots": {
+                        "Area": None,
+                        "Time": "EV",
+                        "City": "Berlin",
+                        "Date": "2017-06-11"
+                    },
+                    "confirmationStatus": "None"
+                },
+                "inputTranscript": "weather tomorrow evening in Berlin"
+            }
+        )
+        self.assertEqual(result['dialogAction']['type'], 'Close')
+
     def __new_bot(self):
         darksky = DarkSky('foo')
-        darksky.load = MagicMock(return_value=dict(now='foo', day='bar'))
+        darksky.load = MagicMock(return_value=Weather(
+                now=WeatherAtTime(20, 'Clear'),
+                day=WeatherDay(19, 21, 'Mostly Cloudy')
+            )
+        )
         geocoder = Geocoder('foo')
         geocoder.geocode = MagicMock(return_value=
             {

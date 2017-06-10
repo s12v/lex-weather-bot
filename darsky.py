@@ -1,6 +1,6 @@
 import logging
 import json
-import urllib
+from urllib import request
 
 from lex import LexContext
 
@@ -40,7 +40,7 @@ class DarkSky:
     def load(self, context: LexContext) -> Weather:
         url = self.URL.format(self.api_key, context.lat(), context.lng(), context.timestamp())
         logger.debug('DARKSKY: url={}'.format(url))
-        data = json.loads(urllib.request.urlopen(url).read().decode('utf-8'))
+        data = json.loads(request.urlopen(url).read().decode('utf-8'))
         currently = data['currently']
         day = data['daily']['data'][0]
         return Weather(

@@ -1,0 +1,117 @@
+import json
+import dateutil.parser
+import datetime
+
+
+class ValidationError(Exception):
+    def __init__(self, slot: str, message: str):
+        super(ValidationError, self).__init__(message)
+        self.slot = slot
+        self.message = message
+
+
+class LexContext:
+
+    INTENT_ABOUT = 'About'
+    INTENT_WEATHER = 'Weather'
+
+    SLOT_CITY = 'City'
+    SLOT_AREA = 'Area'
+    SLOT_DATE = 'Date'
+    SLOT_TIME = 'Time'
+
+    def __init__(self, intent: dict):
+        self.intent_name = intent['currentIntent']['name']
+        self.slots = intent['currentIntent']['slots']
+        self.session = self.__unmarshall_session(intent.get('sessionAttributes') or {})
+        self.invocation_source = intent['invocationSource']
+
+    def timestamp(self) -> int:
+        if self.date() == 'now':
+            date = datetime.datetime.now()
+        else:
+            if self.time():
+                date_str = '{} {}'.format(self.date(), self.time())
+            else:
+                date_str = self.date()
+            date = dateutil.parser.parse(date_str)
+        return int(date.timestamp())
+
+    def lat(self) -> float:
+        try:
+            return self.session.get('location').get('lat')
+        except Exception:
+            return None
+
+    def lng(self) -> float:
+        try:
+            return self.session.get('location').get('lng')
+        except Exception:
+            return None
+
+    def date(self) -> str:
+        return self.slots.get(self.SLOT_DATE)
+
+    def time(self) -> str:
+        return self.slots.get(self.SLOT_TIME)
+
+    def city(self) -> str:
+        return self.slots.get(self.SLOT_CITY)
+
+    def area(self) -> str:
+        return self.slots.get(self.SLOT_AREA)
+
+    def marshall_session(self) -> dict:
+        response = {}
+        for k, v in self.session.items():
+            response[k] = json.dumps(v)
+        return response
+
+    @staticmethod
+    def __unmarshall_session(session):
+        response = {}
+        for k, v in session.items():
+            response[k] = json.loads(v)
+        return response
+
+
+class LexResponses:
+
+    @staticmethod
+    def elicit_slot(context: LexContext, error: ValidationError) -> dict:
+        slots = context.slots.copy()
+        slots[error.slot] = None
+        return {
+            'sessionAttributes': {},
+            'dialogAction': {
+                'type': 'ElicitSlot',
+                'intentName': context.intent_name,
+                'slots': slots,
+                'slotToElicit': error.slot,
+                'message': {
+                    'contentType': 'PlainText',
+                    'content': error.message
+                }
+            }
+        }
+
+    @staticmethod
+    def close(context: LexContext, fulfillment_state: str, message: dict) -> dict:
+        return {
+            'sessionAttributes': context.marshall_session(),
+            'dialogAction': {
+                'type': 'Close',
+                'fulfillmentState': fulfillment_state,
+                'message': message
+            }
+        }
+
+    @staticmethod
+    def delegate(context: LexContext) -> dict:
+        return {
+            'sessionAttributes': context.marshall_session(),
+            'dialogAction': {
+                'type': 'Delegate',
+                'slots': context.slots
+            }
+        }

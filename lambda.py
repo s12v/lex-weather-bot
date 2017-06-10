@@ -12,42 +12,122 @@ darksky_url = 'https://api.darksky.net/forecast/' + os.environ['DARKSKY_KEY'] + 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-SLOT_CITY = 'City'
-SLOT_AREA = 'Area'
-SLOT_DATE = 'Date'
-SLOT_TIME = 'Time'
+
+class ValidationError(Exception):
+    def __init__(self, slot, message):
+        super(ValidationError, self).__init__(message)
+        self.slot = slot
+        self.message = message
+
+
+class LexContext:
+
+    INTENT_ABOUT = 'About'
+    INTENT_WEATHER = 'Weather'
+    SLOT_CITY = 'City'
+    SLOT_AREA = 'Area'
+    SLOT_DATE = 'Date'
+    SLOT_TIME = 'Time'
+
+    def __init__(self, intent: dict):
+        self.intent_name = intent['currentIntent']['name']
+        self.slots = intent['currentIntent']['slots']
+        self.session = intent.get('sessionAttributes') or {}
+        self.invocation_source = intent['invocationSource']
+
+    def validate(self):
+        if not self.slots.get(self.SLOT_CITY):
+            raise ValidationError(self.SLOT_CITY, provide_city())
+
+        if not self.slots.get(self.SLOT_DATE):
+            self.slots[self.SLOT_DATE] = "now"
+        elif not self.__is_valid_date(self.slots.get(self.SLOT_DATE)):
+            raise ValidationError(self.SLOT_DATE, 'I did not understand date. Could you please enter it again?')
+
+    def geocode(self, geocode_func: callable):
+        if self.slots.get(self.SLOT_AREA):
+            address = self.slots.get(self.SLOT_CITY) + ", " + self.slots.get(self.SLOT_AREA)
+        else:
+            address = self.slots.get(self.SLOT_CITY)
+        try:
+            response = geocode_func(address)
+            data = json.loads(response)
+            if len(data['results']) == 0:
+                raise ValidationError('City', provide_city())
+            if len(data['results']) > 1:
+                raise ValidationError('Area', provide_area_details())
+            self.session['location'] = data['results'][0]['geometry']['location']
+            self.session['formatted_address'] = data['results'][0]['formatted_address']
+        except Exception:
+            logger.error("Unable to load location: {}".format(address))
+            raise ValidationError(self.SLOT_CITY, provide_city())
+
+    def timestamp(self) -> int:
+        if self.slots(self.SLOT_DATE) == 'now':
+            date = datetime.datetime.now()
+        else:
+            time = self.slots.get(self.SLOT_TIME)
+            if time:
+                date_str = '{} {}'.format(self.slots(self.SLOT_DATE), self.slots(self.SLOT_TIME))
+            else:
+                date_str = self.slots(self.SLOT_DATE)
+            date = dateutil.parser.parse(date_str)
+        return int(date.timestamp())
+
+    def lat(self) -> float:
+        try:
+            return self.session.get('location').get('lat')
+        except KeyError:
+            return None
+
+    def lng(self) -> float:
+        try:
+            return self.session.get('location').get('lng')
+        except KeyError:
+            return None
+
+    def date(self) -> str:
+        return self.slots(self.SLOT_DATE)
+
+    def dump_session(self) -> dict:
+        response = {}
+        for k, v in self.session:
+            response[k] = json.dumps(v)
+        return response
+
+    def __is_valid_date(self, date: str) -> bool:
+        try:
+            dateutil.parser.parse(date)
+            return True
+        except ValueError:
+            return False
+
 
 # --- Helpers that build all of the responses ---
 
 
-def elicit_slot(session_attributes: dict, intent_name: str, slots: dict, slot_to_elicit: str, message: dict) -> dict:
+def elicit_slot(context: LexContext, error: ValidationError) -> dict:
+    slots = context.slots.copy()
+    slots[error.slot] = None
     return {
-        'sessionAttributes': session_attributes,
+        'sessionAttributes': {},
         'dialogAction': {
             'type': 'ElicitSlot',
-            'intentName': intent_name,
+            'intentName': context.intent_name,
             'slots': slots,
-            'slotToElicit': slot_to_elicit,
-            'message': message
+            'slotToElicit': error.slot,
+            'message': {
+                'contentType': 'PlainText',
+                'content': error.message
+            }
         }
     }
 
 
-def confirm_intent(session_attributes: dict, intent_name: str, slots: dict, message: dict) -> dict:
+def close(context: LexContext, fulfillment_state: str, message: dict) -> dict:
+    logger.debug("CLOSE: state={}, session={}".format(fulfillment_state, json.dumps(context.session)))
     return {
-        'sessionAttributes': session_attributes,
-        'dialogAction': {
-            'type': 'ConfirmIntent',
-            'intentName': intent_name,
-            'slots': slots,
-            'message': message
-        }
-    }
-
-
-def close(session_attributes: dict, fulfillment_state: str, message: dict) -> dict:
-    return {
-        'sessionAttributes': session_attributes,
+        'sessionAttributes': context.dump_session(),
         'dialogAction': {
             'type': 'Close',
             'fulfillmentState': fulfillment_state,
@@ -56,12 +136,13 @@ def close(session_attributes: dict, fulfillment_state: str, message: dict) -> di
     }
 
 
-def delegate(session_attributes: dict, slots: dict) -> dict:
+def delegate(context: LexContext) -> dict:
+    logger.debug('DELEGATE: slots={}, session={}'.format(json.dumps(context.slots), json.dumps(context.session)))
     return {
-        'sessionAttributes': session_attributes,
+        'sessionAttributes': context.dump_session(),
         'dialogAction': {
             'type': 'Delegate',
-            'slots': slots
+            'slots': context.slots
         }
     }
 
@@ -99,62 +180,15 @@ def howto() -> str:
 # --- Helper Functions ---
 
 
-def is_valid_date(date: str) -> bool:
-    try:
-        dateutil.parser.parse(date)
-        return True
-    except ValueError:
-        return False
+def do_geocode(address):
+    url = geocode_url.format(urllib.parse.quote(address, 'utf-8'))
+    logger.debug("GEOCODE: {}".format(url))
+    return urllib.request.urlopen(url).read().decode('utf-8')
 
 
-class ValidationError(Exception):
-    def __init__(self, slot, message):
-        super(ValidationError, self).__init__(message)
-        self.slot = slot
-        self.message = message
-
-
-def validate_request(slots: dict) -> dict:
-    city = slots.get('City')
-    date = slots.get('Date')
-
-    # No city
-    if not city:
-        raise ValidationError('City', provide_city())
-
-    if date and not is_valid_date(date):
-            raise ValidationError('Date', 'I did not understand date. Could you please enter it again?')
-
-    return {'isValid': True}
-
-
-def get_location(slots: dict) -> dict:
-    city = slots.get('City')
-    area = slots.get('Area')
-    location = city + ", " + area if area else city
-    url = geocode_url.format(urllib.parse.quote(location, 'utf-8'))
-    logger.debug("Loading {}".format(url))
-    response = urllib.request.urlopen(url).read().decode('utf-8')
-    try:
-        data = json.loads(response)
-        # Todo check API errors
-        if len(data['results']) > 1:
-            raise ValidationError('Area', provide_area_details())
-        return {
-            'location': data['results'][0]['geometry']['location'],
-            'formatted_address': data['results'][0]['formatted_address']
-        }
-    except KeyError:
-        logger.error("Unable to parse response: {}".format(response))
-
-    return None
-
-
-def get_weather(lat: float, lng: float, date_str: str) -> dict:
-    date = datetime.datetime.now() if date_str == 'now' else dateutil.parser.parse(date_str)
-    timestamp = date.timestamp()
-    url = darksky_url.format(lat, lng, int(timestamp))
-    logger.debug("Loading {}".format(url))
+def load_weather(context: LexContext) -> dict:
+    url = darksky_url.format(context.lat(), context.lng(), context.timestamp())
+    logger.debug("DARKSKY: {}".format(url))
     response = urllib.request.urlopen(url).read().decode('utf-8')
     try:
         data = json.loads(response)
@@ -168,8 +202,8 @@ def get_weather(lat: float, lng: float, date_str: str) -> dict:
     return None
 
 
-def get_weather_summary(weather: dict, formatted_address: str, date: str) -> str:
-    if date == 'now':
+def get_weather_summary(context: LexContext, weather: dict) -> str:
+    if context.date() == 'now':
         now = weather.get('now')
         temp = round(now.get('temperature'))
         summary = now.get('summary')
@@ -182,52 +216,28 @@ def get_weather_summary(weather: dict, formatted_address: str, date: str) -> str
         return "{} to {} degrees. {}".format(min_temp, max_temp, summary)
 
 
-def weather_request(intent_request: dict) -> dict:
-
-    slots = intent_request['currentIntent']['slots']
-    if not slots.get(SLOT_DATE):
-        slots[SLOT_DATE] = "now"
-
-    session_attributes = intent_request.get('sessionAttributes') or {}
-
-    if intent_request['invocationSource'] == 'DialogCodeHook':
+def weather_request(context: LexContext) -> dict:
+    if context.invocation_source == 'DialogCodeHook':
         try:
-            validate_request(slots)
-            location = get_location(slots)
-            if not location:
-                raise ValidationError(SLOT_CITY, 'Unable to find city?')
-            logger.debug('Found location {} for city {}'.format(json.dumps(location), slots.get(SLOT_CITY)))
-            session_attributes['location'] = json.dumps(location)
+            context.validate()
+            context.geocode(do_geocode)
         except ValidationError as err:
-            slots[err.slot] = None
-            return elicit_slot(
-                {},
-                intent_request['currentIntent']['name'],
-                slots,
-                err.slot,
-                {'contentType': 'PlainText', 'content': err.message}
-            )
-
-        logger.debug('delegate, session_attributes={}'.format(session_attributes))
-        return delegate(session_attributes, intent_request['currentIntent']['slots'])
-
-    location = json.loads(session_attributes['location'])
-    weather = get_weather(lat=location['location']['lat'], lng=location['location']['lng'], date_str=date)
-    logger.debug("Fulfill, session_attributes: {}".format(session_attributes))
+            return elicit_slot(context, err)
+        return delegate(context)
 
     return close(
-        session_attributes,
+        context,
         'Fulfilled',
         {
             'contentType': 'PlainText',
-            'content': get_weather_summary(weather, location['formatted_address'], date)
+            'content': get_weather_summary(context, load_weather(context))
         }
     )
 
 
-def about_request():
+def about_request(context: LexContext):
     return close(
-        {},
+        context,
         'Fulfilled',
         {
             'contentType': 'PlainText',
@@ -239,16 +249,17 @@ def about_request():
 # --- Intents ---
 
 
-def dispatch(intent_request):
-    intent_name = intent_request['currentIntent']['name']
-    if intent_name == 'Weather':
-        response = weather_request(intent_request)
-        logger.debug('Response:' + json.dumps(response))
-        return response
-    elif intent_name == 'About':
-        return about_request()
+def dispatch(intent):
+    context = LexContext(intent)
+    if context.intent_name == LexContext.INTENT_ABOUT:
+        response = about_request(context)
+    elif context.intent_name == LexContext.INTENT_WEATHER:
+        response = weather_request(context)
+    else:
+        raise Exception('Intent with name ' + context.intent_name + ' not supported')
 
-    raise Exception('Intent with name ' + intent_name + ' not supported')
+    logger.debug('RESPONSE:' + json.dumps(response))
+    return response
 
 
 # --- Main handler ---

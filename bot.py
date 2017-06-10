@@ -89,8 +89,8 @@ class WeatherBot:
             if len(data['results']) > 1:
                 raise ValidationError('Area', Phrases.provide_area_details())
             context.session['location'] = data['results'][0]['geometry']['location']
-            logger.debug("SESSION: {}".format(json.dumps(context.session)))
-        except Exception as err:
+            logger.debug("GEOCODE: session={}".format(json.dumps(context.session)))
+        except Exception:
             logger.error("Unable to load location: {}".format(self.__address(context)))
             raise ValidationError(LexContext.SLOT_CITY, Phrases.provide_city())
 

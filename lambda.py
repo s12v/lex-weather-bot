@@ -12,11 +12,15 @@ darksky_url = 'https://api.darksky.net/forecast/' + os.environ['DARKSKY_KEY'] + 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
+SLOT_CITY = 'City'
+SLOT_AREA = 'Area'
+SLOT_DATE = 'Date'
+SLOT_TIME = 'Time'
 
 # --- Helpers that build all of the responses ---
 
 
-def elicit_slot(session_attributes, intent_name, slots, slot_to_elicit, message):
+def elicit_slot(session_attributes: dict, intent_name: str, slots: dict, slot_to_elicit: str, message: dict) -> dict:
     return {
         'sessionAttributes': session_attributes,
         'dialogAction': {
@@ -29,7 +33,7 @@ def elicit_slot(session_attributes, intent_name, slots, slot_to_elicit, message)
     }
 
 
-def confirm_intent(session_attributes, intent_name, slots, message):
+def confirm_intent(session_attributes: dict, intent_name: str, slots: dict, message: dict) -> dict:
     return {
         'sessionAttributes': session_attributes,
         'dialogAction': {
@@ -41,8 +45,8 @@ def confirm_intent(session_attributes, intent_name, slots, message):
     }
 
 
-def close(session_attributes, fulfillment_state, message):
-    response = {
+def close(session_attributes: dict, fulfillment_state: str, message: dict) -> dict:
+    return {
         'sessionAttributes': session_attributes,
         'dialogAction': {
             'type': 'Close',
@@ -51,10 +55,8 @@ def close(session_attributes, fulfillment_state, message):
         }
     }
 
-    return response
 
-
-def delegate(session_attributes, slots):
+def delegate(session_attributes: dict, slots: dict) -> dict:
     return {
         'sessionAttributes': session_attributes,
         'dialogAction': {
@@ -64,7 +66,7 @@ def delegate(session_attributes, slots):
     }
 
 
-def provide_city():
+def provide_city() -> str:
     return random.choice([
         'Please provide a city',
         'What is your city?',
@@ -72,20 +74,20 @@ def provide_city():
     ])
 
 
-def provide_area_details():
+def provide_area_details() -> str:
     return random.choice([
         'I found several places with this name. Could you provide country or state?',
     ])
 
 
-def provide_date():
+def provide_date() -> str:
     return random.choice([
         'Please provide a date',
         'When?'
     ])
 
 
-def help():
+def howto() -> str:
     return random.choice([
         "I'm a weather bot. I can provide weather forecast and historical data. For example, ask \"Weather "
         "in Berlin?\", or \"Weather in Moscow on 1st of January?\"",
@@ -97,7 +99,7 @@ def help():
 # --- Helper Functions ---
 
 
-def is_valid_date(date):
+def is_valid_date(date: str) -> bool:
     try:
         dateutil.parser.parse(date)
         return True
@@ -112,7 +114,7 @@ class ValidationError(Exception):
         self.message = message
 
 
-def validate_request(slots):
+def validate_request(slots: dict) -> dict:
     city = slots.get('City')
     date = slots.get('Date')
 
@@ -126,7 +128,9 @@ def validate_request(slots):
     return {'isValid': True}
 
 
-def get_location(city, area):
+def get_location(slots: dict) -> dict:
+    city = slots.get('City')
+    area = slots.get('Area')
     location = city + ", " + area if area else city
     url = geocode_url.format(urllib.parse.quote(location, 'utf-8'))
     logger.debug("Loading {}".format(url))
@@ -146,7 +150,7 @@ def get_location(city, area):
     return None
 
 
-def get_weather(lat, lng, date_str):
+def get_weather(lat: float, lng: float, date_str: str) -> dict:
     date = datetime.datetime.now() if date_str == 'now' else dateutil.parser.parse(date_str)
     timestamp = date.timestamp()
     url = darksky_url.format(lat, lng, int(timestamp))
@@ -164,7 +168,7 @@ def get_weather(lat, lng, date_str):
     return None
 
 
-def get_weather_summary(weather, formatted_address, date):
+def get_weather_summary(weather: dict, formatted_address: str, date: str) -> str:
     if date == 'now':
         now = weather.get('now')
         temp = round(now.get('temperature'))
@@ -178,29 +182,22 @@ def get_weather_summary(weather, formatted_address, date):
         return "{} to {} degrees. {}".format(min_temp, max_temp, summary)
 
 
-def weather_request(intent_request):
+def weather_request(intent_request: dict) -> dict:
 
     slots = intent_request['currentIntent']['slots']
-    city = slots.get('City')
-    area = slots.get('Area')
-    date = slots.get('Date')
-    time = slots.get('Time')
-    if not date:
-        date = "now"
+    if not slots.get(SLOT_DATE):
+        slots[SLOT_DATE] = "now"
 
     session_attributes = intent_request.get('sessionAttributes') or {}
 
     if intent_request['invocationSource'] == 'DialogCodeHook':
         try:
             validate_request(slots)
-
-            location = get_location(city, area)
+            location = get_location(slots)
             if not location:
-                raise ValidationError('City', 'Unable to find city?')
-
+                raise ValidationError(SLOT_CITY, 'Unable to find city?')
+            logger.debug('Found location {} for city {}'.format(json.dumps(location), slots.get(SLOT_CITY)))
             session_attributes['location'] = json.dumps(location)
-            logger.debug('Found location {} for city {}'.format(json.dumps(location), city))
-
         except ValidationError as err:
             slots[err.slot] = None
             return elicit_slot(
@@ -234,7 +231,7 @@ def about_request():
         'Fulfilled',
         {
             'contentType': 'PlainText',
-            'content': help()
+            'content': howto()
         }
     )
 
@@ -246,7 +243,7 @@ def dispatch(intent_request):
     intent_name = intent_request['currentIntent']['name']
     if intent_name == 'Weather':
         response = weather_request(intent_request)
-        logger.debug(json.dumps(response))
+        logger.debug('Response:' + json.dumps(response))
         return response
     elif intent_name == 'About':
         return about_request()

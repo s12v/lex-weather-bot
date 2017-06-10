@@ -2,7 +2,7 @@ import logging
 import json
 import urllib
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 

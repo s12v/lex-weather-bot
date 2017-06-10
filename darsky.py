@@ -4,7 +4,7 @@ import urllib
 
 from lex import LexContext
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 
@@ -39,9 +39,11 @@ class DarkSky:
 
     def load(self, context: LexContext) -> Weather:
         url = self.URL.format(self.api_key, context.lat(), context.lng(), context.timestamp())
-        logger.debug('url={}'.format(url))
+        logger.debug('DARKSKY: url={}'.format(url))
         data = json.loads(urllib.request.urlopen(url).read().decode('utf-8'))
+        currently = data['currently']
+        day = data['daily']['data'][0]
         return Weather(
-            now=WeatherAtTime(data['now']['temperature'], data['now']['summary']),
-            day=WeatherDay(data['day']['temperatureMin'], data['day']['temperatureMax'], data['day']['summary'])
+            now=WeatherAtTime(currently['temperature'], currently['summary']),
+            day=WeatherDay(day['temperatureMin'], day['temperatureMax'], day['summary'])
         )

@@ -65,7 +65,7 @@ class WeatherBot:
             return "Currently it's {} degrees. {}".format(round(weather.now.temp), weather.now.summary)
         elif context.time():
             hi = datetime.datetime.fromtimestamp(context.timestamp()).strftime('%H:%M')
-            return "At {} it's {} degrees. {}".format(hi, round(weather.now.temp), weather.now.summary)
+            return '{} degrees. {}.'.format(hi, round(weather.now.temp), weather.now.summary)
         else:
             return '{} to {} degrees. {}'.format(
                 round(weather.day.temp_min),

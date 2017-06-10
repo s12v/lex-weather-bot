@@ -45,7 +45,7 @@ class WeatherBotTest(unittest.TestCase):
         self.assertEqual(result['dialogAction']['type'], 'ElicitSlot')
         self.assertEqual(result['dialogAction']['slotToElicit'], 'City')
 
-    def test_elicit_city2(self):
+    def test_city_accepted(self):
         result = self.__new_bot().dispatch(
             {
                 'invocationSource': 'DialogCodeHook',

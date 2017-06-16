@@ -113,13 +113,13 @@ class WeatherBot:
         try:
             data = self.__geocoder.geocode(self.__address(context))
             if len(data['results']) == 0:
-                raise ValidationError('City', Phrases.provide_city())
+                raise ValidationError(LexContext.SLOT_CITY, Phrases.provide_city())
             if len(data['results']) > 1:
-                raise ValidationError('Area', Phrases.provide_area_details())
+                raise ValidationError(LexContext.SLOT_AREA, Phrases.provide_area_details())
             context.session['location'] = data['results'][0]['geometry']['location']
             logger.debug("GEOCODE: session={}".format(json.dumps(context.session)))
-        except Exception:
-            logger.error("Unable to load location: {}".format(self.__address(context)))
+        except KeyError:
+            logger.exception("Unable to load location: {}".format(self.__address(context)))
             raise ValidationError(LexContext.SLOT_CITY, Phrases.provide_city())
 
     @staticmethod

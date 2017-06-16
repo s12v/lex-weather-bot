@@ -27,21 +27,21 @@ class LexContext:
         self.invocation_source = intent['invocationSource']
 
     def timestamp(self) -> int:
-        if self.date() == 'now':
+        if self.date == 'now':
             date = datetime.datetime.now()
         else:
-            if self.time():
-                if self.time() == 'MO':
+            if self.time:
+                if self.time == 'MO':
                     self.__set_time('09:00')
-                elif self.time() == 'AF':
+                elif self.time == 'AF':
                     self.__set_time('14:00')
-                elif self.time() == 'EV':
+                elif self.time == 'EV':
                     self.__set_time('19:00')
-                elif self.time() == 'NI':
+                elif self.time == 'NI':
                     self.__set_time('23:00')
-                date_str = '{} {}'.format(self.date(), self.time())
+                date_str = '{} {}'.format(self.date, self.time)
             else:
-                date_str = self.date()
+                date_str = self.date
             date = date_parser.parse(date_str)
         return int(date.timestamp())
 
@@ -57,18 +57,26 @@ class LexContext:
         except Exception:
             return None
 
+    @property
     def date(self) -> str:
         return self.slots.get(self.SLOT_DATE)
 
+    @property
+    def now(self) -> bool:
+        return self.slots.get(self.SLOT_DATE) == 'now'
+
+    @property
     def time(self) -> str:
         return self.slots.get(self.SLOT_TIME)
 
     def __set_time(self, time: str):
         self.slots[self.SLOT_TIME] = time
 
+    @property
     def city(self) -> str:
         return self.slots.get(self.SLOT_CITY)
 
+    @property
     def area(self) -> str:
         return self.slots.get(self.SLOT_AREA)
 

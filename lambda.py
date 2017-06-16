@@ -5,11 +5,16 @@ import logging
 from bot import WeatherBot
 from darsky import DarkSky
 from geocoder import Geocoder
+from webcam import WebcamSource
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-bot = WeatherBot(DarkSky(os.environ['DARKSKY_KEY']), Geocoder(os.environ['GOOGLE_KEY']))
+bot = WeatherBot(
+    darksky=DarkSky(os.environ['DARKSKY_KEY']),
+    geocoder=Geocoder(os.environ['GOOGLE_KEY']),
+    webcam_source=WebcamSource(os.environ['WEBCAM_KEY'])
+)
 
 
 def lambda_handler(event, context):

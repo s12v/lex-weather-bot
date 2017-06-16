@@ -20,10 +20,10 @@ class LexContextTest(unittest.TestCase):
 
             }
         )
-        self.assertEqual(lex.date(), '2017-06-10')
-        self.assertEqual(lex.city(), 'Berlin')
-        self.assertIsNone(lex.time())
-        self.assertIsNone(lex.area())
+        self.assertEqual(lex.date, '2017-06-10')
+        self.assertEqual(lex.city, 'Berlin')
+        self.assertIsNone(lex.time)
+        self.assertIsNone(lex.area)
 
     def test_tomorrow_evening(self):
         lex = LexContext(

@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 from bot import WeatherBot
 from darsky import DarkSky, Weather, WeatherAtTime, WeatherDay
 from geocoder import Geocoder
+from webcam import WebcamSource
 
 
 class WeatherBotTest(unittest.TestCase):
@@ -96,8 +97,8 @@ class WeatherBotTest(unittest.TestCase):
     def __new_bot(self):
         darksky = DarkSky('foo')
         darksky.load = MagicMock(return_value=Weather(
-                now=WeatherAtTime(20, 'Clear'),
-                day=WeatherDay(19, 21, 'Mostly Cloudy')
+                now=WeatherAtTime(20, 'Clear', ''),
+                day=WeatherDay(19, 21, 'Mostly Cloudy', '')
             )
         )
         geocoder = Geocoder('foo')
@@ -118,4 +119,7 @@ class WeatherBotTest(unittest.TestCase):
             }
         )
 
-        return WeatherBot(darksky, geocoder)
+        webcam_source = WebcamSource('foo')
+        webcam_source.load = MagicMock(return_value=None)
+
+        return WeatherBot(darksky, geocoder, webcam_source)

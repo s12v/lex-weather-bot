@@ -46,8 +46,8 @@ class WeatherBot:
         try:
             if context.now:
                 return self.__webcam_source.load(context)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.exception('Unable to load webcam')
         return None
 
     def __weather_request(self, context: LexContext) -> dict:
@@ -69,7 +69,8 @@ class WeatherBot:
                     {
                         "title": webcam.title,
                         "subTitle": webcam.local_time,
-                        "imageUrl": webcam.image
+                        "imageUrl": webcam.thumbnail,
+                        "attachmentLinkUrl": webcam.url,
                     }
                 ]
             }
@@ -85,18 +86,6 @@ class WeatherBot:
             },
             response_card
         )
-
-    @staticmethod
-    def __icon_url(weather: Weather) -> str:
-        icons = ['clear-day', 'clear-night', 'rain', 'snow', 'sleet', 'wind', 'fog',
-                 'cloudy', 'partly-cloudy-day' 'partly-cloudy-night']
-        # TODO
-        if weather.day == 'now':
-            icon = weather.now.icon
-        else:
-            icon = weather.day.icon
-        if icon in icons:
-            return 'https://s3.amazonaws.com/simple-weather-bot/{}.png?v3'.format(icon)
 
     @staticmethod
     def __get_weather_summary(context: LexContext, weather: Weather) -> str:

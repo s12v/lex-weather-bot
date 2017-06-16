@@ -8,9 +8,8 @@ provider:
 
 package:
   exclude:
-    - '**'
-  include:
-    - '*.py'
+    - '.*'
+    - '*.iml'
 
 functions:
   lexHandler:

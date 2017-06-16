@@ -2,6 +2,7 @@ import logging
 import json
 import random
 import datetime
+import pytz
 from urllib import request
 
 from lex import LexContext
@@ -12,22 +13,24 @@ logger.setLevel(logging.DEBUG)
 
 class Webcam:
 
-    def __init__(self, title: str, image: str, time: int, timezone: str):
+    def __init__(self, title: str, thumbnail: str, image: str, url: str, time: int, timezone: str):
         self.title = title
+        self.thumbnail = thumbnail
         self.image = image
+        self.url = url
         self.time = time
         self.timezone = timezone
 
     @property
     def local_time(self) -> str:
-        time = datetime.datetime.fromtimestamp(self.time, timezone(self.timezone))
+        time = datetime.datetime.fromtimestamp(self.time, pytz.timezone(self.timezone))
         return time.strftime('%H:%M')
 
 
 class WebcamSource:
 
     __DISTANCE_KM = 30
-    __URL = 'https://webcamstravel.p.mashape.com/webcams/list/nearby={},{},{}?show=webcams:location,image'
+    __URL = 'https://webcamstravel.p.mashape.com/webcams/list/nearby={},{},{}?show=webcams:location,image,url'
 
     def __init__(self, key):
         self.__api_key = key
@@ -39,9 +42,12 @@ class WebcamSource:
         r.add_header('X-Mashape-Key', self.__api_key)
         data = json.loads(request.urlopen(r).read().decode('utf-8'))
         webcam = random.choice(data['result']['webcams'])
+        logger.debug('random webcam:{}'.format(json.dumps(webcam)))
         return Webcam(
             title=webcam['title'],
+            thumbnail=webcam['image']['current']['thumbnail'],
             image=webcam['image']['current']['preview'],
-            time=webcam['update'],
+            url=webcam['url']['current']['mobile'],
+            time=webcam['image']['update'],
             timezone=webcam['location']['timezone']
         )

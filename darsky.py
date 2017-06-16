@@ -10,17 +10,19 @@ logger.setLevel(logging.DEBUG)
 
 class WeatherAtTime:
 
-    def __init__(self, temp: float, summary: str):
+    def __init__(self, temp: float, summary: str, icon: str):
         self.temp = temp
         self.summary = summary
+        self.icon = icon
 
 
 class WeatherDay:
 
-    def __init__(self, temp_min: float, temp_max: float, summary: str):
+    def __init__(self, temp_min: float, temp_max: float, summary: str, icon: str):
         self.temp_min = temp_min
         self.temp_max = temp_max
         self.summary = summary
+        self.icon = icon
 
 
 class Weather:
@@ -44,6 +46,6 @@ class DarkSky:
         currently = data['currently']
         day = data['daily']['data'][0]
         return Weather(
-            now=WeatherAtTime(currently['temperature'], currently['summary']),
-            day=WeatherDay(day['temperatureMin'], day['temperatureMax'], day['summary'])
+            now=WeatherAtTime(currently['temperature'], currently['summary'], currently['icon']),
+            day=WeatherDay(day['temperatureMin'], day['temperatureMax'], day['summary'], day['icon'])
         )

@@ -1,6 +1,7 @@
 import logging
 import json
 from dateutil import parser as dateutil_parser
+from urllib import request
 
 from phrases import Phrases
 from darsky import DarkSky, Weather
@@ -12,7 +13,6 @@ logger.setLevel(logging.DEBUG)
 
 
 class WeatherBot:
-
     def __init__(self, darksky: DarkSky, geocoder: Geocoder):
         self.__darksky = darksky
         self.__geocoder = geocoder
@@ -40,6 +40,22 @@ class WeatherBot:
             }
         )
 
+    def __load_webcam(self, context: LexContext) -> dict:
+        try:
+            u = 'https://webcamstravel.p.mashape.com/webcams/list/nearby={},{},30?show=webcams:location,image'
+            url = u.format(context.lat(), context.lng())
+            logger.debug('WEBCAMS: url={}'.format(url))
+            r = request.Request(url)
+            r.add_header('X-Mashape-Key', 'GrQemzLeVMmshGEEMujsXBpIRcRpp1XGI7Ojsn4EioK6QdNGhP')
+            data = json.loads(request.urlopen(r).read().decode('utf-8'))
+            webcam = data['result']['webcams'][0]
+            return {
+                'title': webcam['title'],
+                'image': webcam['image']['current']['preview']
+            }
+        except Exception:
+            return None
+
     def __weather_request(self, context: LexContext) -> dict:
         if context.invocation_source == 'DialogCodeHook':
             try:
@@ -49,14 +65,50 @@ class WeatherBot:
                 return LexResponses.elicit_slot(context, err)
             return LexResponses.delegate(context)
 
+        weather = self.__darksky.load(context)
+        message_content = self.__get_weather_summary(context, weather)
+        webcam = self.__load_webcam(context)
+        if webcam:
+            response_card = {
+
+                "contentType": "application/vnd.amazonaws.card.generic",
+                "genericAttachments": [
+                    {
+                        "title": webcam['title'],
+                        "subTitle": message_content,
+                        "imageUrl": webcam['image']
+                    }
+                ]
+            }
+            message = {
+                'contentType': 'PlainText',
+                'content': message_content
+            }
+        else:
+            message = {
+                'contentType': 'PlainText',
+                'content': message_content
+            }
+            response_card = None
+
         return LexResponses.close(
             context,
             'Fulfilled',
-            {
-                'contentType': 'PlainText',
-                'content': self.__get_weather_summary(context, self.__darksky.load(context))
-            }
+            message,
+            response_card
         )
+
+    @staticmethod
+    def __icon_url(weather: Weather) -> str:
+        icons = ['clear-day', 'clear-night', 'rain', 'snow', 'sleet', 'wind', 'fog',
+                 'cloudy', 'partly-cloudy-day' 'partly-cloudy-night']
+        # TODO
+        if weather.day == 'now':
+            icon = weather.now.icon
+        else:
+            icon = weather.day.icon
+        if icon in icons:
+            return 'https://s3.amazonaws.com/simple-weather-bot/{}.png?v3'.format(icon)
 
     @staticmethod
     def __get_weather_summary(context: LexContext, weather: Weather) -> str:

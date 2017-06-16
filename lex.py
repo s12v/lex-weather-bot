@@ -107,8 +107,8 @@ class LexResponses:
         }
 
     @staticmethod
-    def close(context: LexContext, fulfillment_state: str, message: dict) -> dict:
-        return {
+    def close(context: LexContext, fulfillment_state: str, message: dict, response_card=None) -> dict:
+        response = {
             'sessionAttributes': context.marshall_session(),
             'dialogAction': {
                 'type': 'Close',
@@ -116,6 +116,11 @@ class LexResponses:
                 'message': message
             }
         }
+
+        if response_card:
+            response['dialogAction']['responseCard'] = response_card
+
+        return response
 
     @staticmethod
     def delegate(context: LexContext) -> dict:

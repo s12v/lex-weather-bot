@@ -22,9 +22,9 @@ class WeatherBot:
     def dispatch(self, intent: dict) -> dict:
         context = LexContext(intent)
         if context.intent_name == LexContext.INTENT_ABOUT:
-            response = self.__about_request(context)
+            response = self.__handle_about_request(context)
         elif context.intent_name == LexContext.INTENT_WEATHER:
-            response = self.__weather_request(context)
+            response = self.__handle_weather_request(context)
         else:
             raise Exception('Intent with name {} not supported'.format(context.intent_name))
 
@@ -32,7 +32,7 @@ class WeatherBot:
         return response
 
     @staticmethod
-    def __about_request(context: LexContext):
+    def __handle_about_request(context: LexContext):
         return LexResponses.close(
             context,
             'Fulfilled',
@@ -42,7 +42,7 @@ class WeatherBot:
             }
         )
 
-    def __weather_request(self, context: LexContext) -> dict:
+    def __handle_weather_request(self, context: LexContext) -> dict:
         if context.invocation_source == 'DialogCodeHook':
             try:
                 self.__validate(context)
@@ -53,8 +53,20 @@ class WeatherBot:
 
         weather, webcam = self.__loader.load(context)
         message_content = self.__get_weather_summary(context, weather)
+        return LexResponses.close(
+            context,
+            'Fulfilled',
+            {
+                'contentType': 'PlainText',
+                'content': message_content
+            },
+            self.__response_card(webcam)
+        )
+
+    @staticmethod
+    def __response_card(webcam: Webcam):
         if webcam:
-            response_card = {
+            return {
                 "contentType": "application/vnd.amazonaws.card.generic",
                 "genericAttachments": [
                     {
@@ -65,18 +77,7 @@ class WeatherBot:
                     }
                 ]
             }
-        else:
-            response_card = None
-
-        return LexResponses.close(
-            context,
-            'Fulfilled',
-            {
-                'contentType': 'PlainText',
-                'content': message_content
-            },
-            response_card
-        )
+        return None
 
     @staticmethod
     def __get_weather_summary(context: LexContext, weather: Weather) -> str:

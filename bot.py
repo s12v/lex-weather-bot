@@ -16,7 +16,7 @@ logger.setLevel(logging.DEBUG)
 
 class WeatherBot:
     def __init__(self, weather_source: WeatherSource, geocoder: Geocoder, webcam_source: WebcamSource):
-        self.__loader = Loader(weather_source, webcam_source)
+        self.__loader = AsyncLoader(weather_source, webcam_source)
         self.__geocoder = geocoder
 
     def dispatch(self, intent: dict) -> dict:
@@ -81,7 +81,7 @@ class WeatherBot:
     @staticmethod
     def __get_weather_summary(context: LexContext, weather: Weather) -> str:
         if context.now:
-            return "Currently it's {} degrees. {}".format(round(weather.now.temp), weather.now.summary)
+            return "{} degrees. {}. Today: ".format(round(weather.now.temp), weather.now.summary, weather.day.summary)
         elif context.time:
             return '{} degrees. {}.'.format(round(weather.now.temp), weather.now.summary)
         else:
@@ -129,7 +129,7 @@ class WeatherBot:
             return context.city
 
 
-class Loader:
+class AsyncLoader:
     __weather_result = None
     __webcam_result = None
 

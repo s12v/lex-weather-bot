@@ -1,7 +1,8 @@
 import logging
 import json
+import threading
+from typing import Tuple
 from dateutil import parser as dateutil_parser
-from urllib import request
 
 from phrases import Phrases
 from darsky import DarkSky, Weather
@@ -14,10 +15,9 @@ logger.setLevel(logging.DEBUG)
 
 
 class WeatherBot:
-    def __init__(self, darksky: DarkSky, geocoder: Geocoder, webcam_source: WebcamSource):
-        self.__darksky = darksky
+    def __init__(self, weather_source: DarkSky, geocoder: Geocoder, webcam_source: WebcamSource):
+        self.__loader = Loader(weather_source, webcam_source)
         self.__geocoder = geocoder
-        self.__webcam_source = webcam_source
 
     def dispatch(self, intent: dict) -> dict:
         context = LexContext(intent)
@@ -42,14 +42,6 @@ class WeatherBot:
             }
         )
 
-    def __load_webcam(self, context: LexContext) -> Webcam:
-        try:
-            if context.now:
-                return self.__webcam_source.load(context)
-        except Exception as e:
-            logger.exception('Unable to load webcam')
-        return None
-
     def __weather_request(self, context: LexContext) -> dict:
         if context.invocation_source == 'DialogCodeHook':
             try:
@@ -59,8 +51,7 @@ class WeatherBot:
                 return LexResponses.elicit_slot(context, err)
             return LexResponses.delegate(context)
 
-        webcam = self.__load_webcam(context) # TODO async
-        weather = self.__darksky.load(context)
+        weather, webcam = self.__loader.load(context)
         message_content = self.__get_weather_summary(context, weather)
         if webcam:
             response_card = {
@@ -136,3 +127,35 @@ class WeatherBot:
             return '{}, {}'.format(context.city, context.area)
         else:
             return context.city
+
+
+class Loader:
+    __weather_result = None
+    __webcam_result = None
+
+    def __init__(self, weather_source: DarkSky, webcam_source: WebcamSource):
+        self.__weather_source = weather_source
+        self.__webcam_source = webcam_source
+
+    def load(self, context: LexContext) -> Tuple[Weather, Webcam]:
+        self.__weather_result = None
+        self.__webcam_result = None
+        threads = [
+            threading.Thread(target=self.__load_weather, args=[context]),
+            threading.Thread(target=self.__load_webcam, args=[context]),
+        ]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        return (self.__weather_result, self.__webcam_result)
+
+    def __load_weather(self, context: LexContext):
+        self.__weather_result =  self.__weather_source.load(context)
+
+    def __load_webcam(self, context: LexContext):
+        try:
+            if context.now:
+                self.__webcam_result = self.__webcam_source.load(context)
+        except Exception:
+            logger.exception('Unable to load webcam')

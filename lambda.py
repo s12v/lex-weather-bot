@@ -11,7 +11,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 bot = WeatherBot(
-    darksky=DarkSky(os.environ['DARKSKY_KEY']),
+    weather_source=DarkSky(os.environ['DARKSKY_KEY']),
     geocoder=Geocoder(os.environ['GOOGLE_KEY']),
     webcam_source=WebcamSource(os.environ['WEBCAM_KEY'])
 )

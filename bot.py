@@ -82,7 +82,7 @@ class WeatherBot:
     @staticmethod
     def __get_weather_summary(context: LexContext, weather: Weather) -> str:
         if context.now:
-            return "{} degrees. {}. Today: ".format(round(weather.now.temp), weather.now.summary, weather.day.summary)
+            return "{} degrees. {}. Today: {}".format(round(weather.now.temp), weather.now.summary, weather.day.summary)
         elif context.time:
             return '{} degrees. {}.'.format(round(weather.now.temp), weather.now.summary)
         else:
@@ -149,10 +149,10 @@ class AsyncLoader:
             thread.start()
         for thread in threads:
             thread.join()
-        return (self.__weather_result, self.__webcam_result)
+        return self.__weather_result, self.__webcam_result
 
     def __load_weather(self, context: LexContext):
-        self.__weather_result =  self.__weather_source.load(context)
+        self.__weather_result = self.__weather_source.load(context)
 
     def __load_webcam(self, context: LexContext):
         try:

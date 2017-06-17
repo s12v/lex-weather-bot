@@ -32,7 +32,7 @@ class Weather:
         self.day = day
 
 
-class DarkSky:
+class WeatherSource:
 
     URL = 'https://api.darksky.net/forecast/{}/{},{},{}?exclude=minutely,hourly,flags&units=auto'
 

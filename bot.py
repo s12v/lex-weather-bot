@@ -5,7 +5,7 @@ from typing import Tuple
 from dateutil import parser as dateutil_parser
 
 from phrases import Phrases
-from darsky import DarkSky, Weather
+from weather import WeatherSource, Weather
 from geocoder import Geocoder
 from lex import LexContext, LexResponses, ValidationError
 from webcam import Webcam, WebcamSource
@@ -15,7 +15,7 @@ logger.setLevel(logging.DEBUG)
 
 
 class WeatherBot:
-    def __init__(self, weather_source: DarkSky, geocoder: Geocoder, webcam_source: WebcamSource):
+    def __init__(self, weather_source: WeatherSource, geocoder: Geocoder, webcam_source: WebcamSource):
         self.__loader = Loader(weather_source, webcam_source)
         self.__geocoder = geocoder
 
@@ -133,7 +133,7 @@ class Loader:
     __weather_result = None
     __webcam_result = None
 
-    def __init__(self, weather_source: DarkSky, webcam_source: WebcamSource):
+    def __init__(self, weather_source: WeatherSource, webcam_source: WebcamSource):
         self.__weather_source = weather_source
         self.__webcam_source = webcam_source
 

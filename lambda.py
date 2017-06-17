@@ -3,7 +3,7 @@ import os
 import logging
 
 from bot import WeatherBot
-from darsky import DarkSky
+from weather import WeatherSource
 from geocoder import Geocoder
 from webcam import WebcamSource
 
@@ -11,7 +11,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 bot = WeatherBot(
-    weather_source=DarkSky(os.environ['DARKSKY_KEY']),
+    weather_source=WeatherSource(os.environ['DARKSKY_KEY']),
     geocoder=Geocoder(os.environ['GOOGLE_KEY']),
     webcam_source=WebcamSource(os.environ['WEBCAM_KEY'])
 )

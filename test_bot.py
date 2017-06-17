@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from bot import WeatherBot
-from darsky import DarkSky, Weather, WeatherAtTime, WeatherDay
+from weather import WeatherSource, Weather, WeatherAtTime, WeatherDay
 from geocoder import Geocoder
 from webcam import WebcamSource
 
@@ -95,7 +95,7 @@ class WeatherBotTest(unittest.TestCase):
         self.assertEqual(result['dialogAction']['type'], 'Close')
 
     def __new_bot(self):
-        darksky = DarkSky('foo')
+        darksky = WeatherSource('foo')
         darksky.load = MagicMock(return_value=Weather(
                 now=WeatherAtTime(20, 'Clear', ''),
                 day=WeatherDay(19, 21, 'Mostly Cloudy', '')

@@ -67,13 +67,13 @@ class WeatherBot:
     def __response_card(webcam: Webcam):
         if webcam:
             return {
-                "contentType": "application/vnd.amazonaws.card.generic",
-                "genericAttachments": [
+                'contentType': 'application/vnd.amazonaws.card.generic',
+                'genericAttachments': [
                     {
-                        "title": webcam.title,
-                        "subTitle": webcam.local_time,
-                        "imageUrl": webcam.thumbnail,
-                        "attachmentLinkUrl": webcam.url,
+                        'title': webcam.title,
+                        'subTitle': webcam.local_time,
+                        'imageUrl': webcam.thumbnail,
+                        'attachmentLinkUrl': webcam.url,
                     }
                 ]
             }

@@ -5,6 +5,7 @@ from bot import WeatherBot
 from weather import WeatherSource, Weather, WeatherAtTime, WeatherDay
 from geocoder import Geocoder
 from webcam import WebcamSource
+from timezone import TimezoneApi
 
 
 class WeatherBotTest(unittest.TestCase):
@@ -95,7 +96,9 @@ class WeatherBotTest(unittest.TestCase):
         self.assertEqual(result['dialogAction']['type'], 'Close')
 
     def __new_bot(self):
-        darksky = WeatherSource('foo')
+        timezone = TimezoneApi('bar')
+        timezone.load = MagicMock(return_value=12345)
+        darksky = WeatherSource('foo', timezone)
         darksky.load = MagicMock(return_value=Weather(
                 now=WeatherAtTime(20, 'Clear', ''),
                 day=WeatherDay(19, 21, 'Mostly Cloudy', '')

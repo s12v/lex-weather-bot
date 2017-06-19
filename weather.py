@@ -3,6 +3,7 @@ import json
 from urllib import request
 
 from lex import LexContext
+from timezone import TimezoneApi
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -34,13 +35,23 @@ class Weather:
 
 class WeatherSource:
 
-    URL = 'https://api.darksky.net/forecast/{}/{},{},{}?exclude=minutely,hourly,flags&units=auto'
+    URL = 'https://api.darksky.net/forecast/{}/{},{}?exclude=minutely,hourly,flags&units=si'
+    URL_TIME_MACHINE = 'https://api.darksky.net/forecast/{}/{},{},{}?exclude=minutely,hourly,flags&units=si'
 
-    def __init__(self, key):
+    def __init__(self, key, timezone_api: TimezoneApi):
         self.api_key = key
+        self.timezone_api = timezone_api
 
     def load(self, context: LexContext) -> Weather:
-        url = self.URL.format(self.api_key, context.lat(), context.lng(), context.timestamp())
+        if context.now:
+            url = self.URL.format(self.api_key, context.lat, context.lng)
+        else:
+            try:
+                timestamp = self.timezone_api.load(context.lat, context.lng, context.timestamp)
+            except Exception:
+                logger.exception('Unable to load time zone')
+                timestamp = context.timestamp
+            url = self.URL_TIME_MACHINE.format(self.api_key, context.lat, context.lng, timestamp)
         logger.debug('DARKSKY: url={}'.format(url))
         data = json.loads(request.urlopen(url).read().decode('utf-8'))
         currently = data['currently']

@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 from dateutil import parser as date_parser
 
 
@@ -26,11 +27,13 @@ class LexContext:
         self.session = self.__unmarshall_session(intent.get('sessionAttributes') or {})
         self.invocation_source = intent['invocationSource']
 
+    @property
     def timestamp(self) -> int:
         if self.date == 'now':
             date = datetime.datetime.now()
         else:
             if self.time:
+                self.__set_time(re.sub(r'^HIS\s+', '', self.time)) # AWS bug
                 if self.time == 'MO':
                     self.__set_time('09:00')
                 elif self.time == 'AF':
@@ -39,18 +42,21 @@ class LexContext:
                     self.__set_time('19:00')
                 elif self.time == 'NI':
                     self.__set_time('23:00')
-                date_str = '{} {}'.format(self.date, self.time)
             else:
-                date_str = self.date
+                self.__set_time('12:00')
+                # timezone!
+            date_str = '{} {}'.format(self.date, self.time)
             date = date_parser.parse(date_str)
         return int(date.timestamp())
 
+    @property
     def lat(self) -> float:
         try:
             return self.session.get('location').get('lat')
         except Exception:
             return None
 
+    @property
     def lng(self) -> float:
         try:
             return self.session.get('location').get('lng')
@@ -79,6 +85,13 @@ class LexContext:
     @property
     def area(self) -> str:
         return self.slots.get(self.SLOT_AREA)
+
+    @property
+    def address(self):
+        if self.area:
+            return '{}, {}'.format(self.city, self.area)
+        else:
+            return self.city
 
     def marshall_session(self) -> dict:
         response = {}

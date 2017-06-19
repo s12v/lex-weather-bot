@@ -103,7 +103,7 @@ class WeatherBot:
 
     def __geocode(self, context: LexContext):
         try:
-            data = self.__geocoder.geocode(self.__address(context))
+            data = self.__geocoder.geocode(context)
             if len(data['results']) == 0:
                 raise ValidationError(LexContext.SLOT_CITY, Phrases.provide_city())
             if len(data['results']) > 1:
@@ -111,7 +111,7 @@ class WeatherBot:
             context.session['location'] = data['results'][0]['geometry']['location']
             logger.debug("GEOCODE: session={}".format(json.dumps(context.session)))
         except KeyError:
-            logger.exception("Unable to load location: {}".format(self.__address(context)))
+            logger.exception("Unable to load location: {}".format(context.address))
             raise ValidationError(LexContext.SLOT_CITY, Phrases.provide_city())
 
     @staticmethod
@@ -121,13 +121,6 @@ class WeatherBot:
             return True
         except ValueError:
             return False
-
-    @staticmethod
-    def __address(context: LexContext):
-        if context.area:
-            return '{}, {}'.format(context.city, context.area)
-        else:
-            return context.city
 
 
 class AsyncLoader:

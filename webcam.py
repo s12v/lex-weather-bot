@@ -36,13 +36,12 @@ class WebcamSource:
         self.__api_key = key
 
     def load(self, context: LexContext) -> Webcam:
-        url = self.__URL.format(context.lat(), context.lng(), self.__DISTANCE_KM)
+        url = self.__URL.format(context.lat, context.lng, self.__DISTANCE_KM)
         logger.debug('WEBCAMS: url={}'.format(url))
         r = request.Request(url)
         r.add_header('X-Mashape-Key', self.__api_key)
         data = json.loads(request.urlopen(r).read().decode('utf-8'))
         webcam = random.choice(data['result']['webcams'])
-        logger.debug('random webcam:{}'.format(json.dumps(webcam)))
         return Webcam(
             title=webcam['title'],
             thumbnail=webcam['image']['current']['thumbnail'],

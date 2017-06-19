@@ -33,7 +33,7 @@ class LexContext:
             date = datetime.datetime.now()
         else:
             if self.time:
-                self.__set_time(re.sub(r'^HIS\s+', '', self.time)) # AWS bug
+                self.__set_time(re.sub(r'^HIS\s+', '', self.time))  # AWS bug
                 if self.time == 'MO':
                     self.__set_time('09:00')
                 elif self.time == 'AF':
@@ -42,10 +42,9 @@ class LexContext:
                     self.__set_time('19:00')
                 elif self.time == 'NI':
                     self.__set_time('23:00')
+                date_str = '{} {}'.format(self.date, self.time)
             else:
-                self.__set_time('12:00')
-                # timezone!
-            date_str = '{} {}'.format(self.date, self.time)
+                date_str = '{} 12:00'.format(self.date)
             date = date_parser.parse(date_str)
         return int(date.timestamp())
 

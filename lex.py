@@ -23,34 +23,36 @@ class LexContext:
     SLOT_TIME = 'Time'
 
     __now = False
+    __specific_time = False
 
     def __init__(self, intent: dict):
         self.intent_name = intent['currentIntent']['name']
         self.slots = intent['currentIntent']['slots']
         self.session = self.__unmarshall_session(intent.get('sessionAttributes') or {})
         self.invocation_source = intent['invocationSource']
-        self.timestamp = self.__init_date_time()
+        self.__init_date_time()
 
     def __init_date_time(self):
-        if not self.date:
-            self.slots[self.SLOT_DATE] = datetime.datetime.now().strftime('%Y-%m-%d')
+        date = self.date
+        if not date:
             self.__now = True
+            date = datetime.datetime.now().strftime('%Y-%m-%d')
 
         if self.time:
-            self.__now = False
-            self.slots[self.SLOT_TIME] = re.sub(r'^HIS\s+', '', self.time)  # AWS bug
-            if self.time == 'MO':
-                self.slots[self.SLOT_TIME] = '09:00'
-            elif self.time == 'AF':
-                self.slots[self.SLOT_TIME] = '14:00'
-            elif self.time == 'EV':
-                self.slots[self.SLOT_TIME] = '19:00'
-            elif self.time == 'NI':
-                self.slots[self.SLOT_TIME] = '23:00'
-            date_str = '{} {}'.format(self.date, self.time)
+            self.__specific_time = True
+            time = re.sub(r'^HIS\s+', '', self.time)  # AWS bug
+            if time == 'MO':
+                time = '09:00'
+            elif time == 'AF':
+                time = '14:00'
+            elif time == 'EV':
+                time = '19:00'
+            elif time == 'NI':
+                time = '23:00'
+            date_str = '{} {}'.format(date, time)
         else:
-            date_str = '{} 12:00'.format(self.date)
-        return int(date_parser.parse(date_str).timestamp())
+            date_str = '{} 12:00'.format(date)
+        self.timestamp = int(date_parser.parse(date_str).timestamp())
 
     @property
     def lat(self) -> float:
@@ -71,12 +73,16 @@ class LexContext:
         return self.slots.get(self.SLOT_DATE)
 
     @property
+    def time(self) -> str:
+        return self.slots.get(self.SLOT_TIME)
+
+    @property
     def now(self) -> bool:
         return self.__now
 
     @property
-    def time(self) -> str:
-        return self.slots.get(self.SLOT_TIME)
+    def specific_time(self) -> bool:
+        return self.__specific_time
 
     @property
     def city(self) -> str:

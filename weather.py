@@ -29,7 +29,7 @@ class WeatherDay:
 class Weather:
 
     def __init__(self, now: WeatherAtTime, day: WeatherDay):
-        self.now = now
+        self.at_time = now
         self.day = day
 
 

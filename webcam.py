@@ -41,12 +41,15 @@ class WebcamSource:
         r = request.Request(url)
         r.add_header('X-Mashape-Key', self.__api_key)
         data = json.loads(request.urlopen(r).read().decode('utf-8'))
-        webcam = random.choice(data['result']['webcams'])
-        return Webcam(
-            title=webcam['title'],
-            thumbnail=webcam['image']['current']['thumbnail'],
-            image=webcam['image']['current']['preview'],
-            url=webcam['url']['current']['mobile'],
-            time=webcam['image']['update'],
-            timezone=webcam['location']['timezone']
-        )
+        if data['result']['webcams']:
+            webcam = random.choice(data['result']['webcams'])
+            return Webcam(
+                title=webcam['title'],
+                thumbnail=webcam['image']['current']['thumbnail'],
+                image=webcam['image']['current']['preview'],
+                url=webcam['url']['current']['mobile'],
+                time=webcam['image']['update'],
+                timezone=webcam['location']['timezone']
+            )
+        else:
+            return None

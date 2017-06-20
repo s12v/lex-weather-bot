@@ -29,7 +29,7 @@ class Webcam:
 
 class WebcamSource:
 
-    __DISTANCE_KM = 20
+    __DISTANCE_KM = 50
     __URL = 'https://webcamstravel.p.mashape.com/webcams/list/nearby={},{},{}/orderby=popularity/?show=webcams:location,image,url'
 
     def __init__(self, key):

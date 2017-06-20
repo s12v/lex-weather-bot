@@ -47,7 +47,7 @@ class WebcamSource:
                 title=webcam['title'],
                 thumbnail=webcam['image']['current']['thumbnail'],
                 image=webcam['image']['current']['preview'],
-                url=webcam['url']['current']['mobile'],
+                url=webcam['url']['current']['mobile'].replace('.travel/webcam/', '.travel/fullscreen/'),
                 time=webcam['image']['update'],
                 timezone=webcam['location']['timezone']
             )

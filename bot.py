@@ -2,12 +2,11 @@ import logging
 import json
 import threading
 from typing import Tuple
-from dateutil import parser as dateutil_parser
 
 from phrases import Phrases
 from weather import WeatherSource, Weather
 from geocoder import Geocoder
-from lex import LexContext, LexResponses, ValidationError
+from lex import LexContext, LexResponses, ValidationError, LexContextValidator
 from webcam import Webcam, WebcamSource
 
 logger = logging.getLogger()
@@ -45,7 +44,7 @@ class WeatherBot:
     def __handle_weather_request(self, context: LexContext) -> dict:
         if context.invocation_source == 'DialogCodeHook':
             try:
-                self.__validate(context)
+                LexContextValidator().validate(context)
                 self.__geocode(context)
             except ValidationError as err:
                 return LexResponses.elicit_slot(context, err)
@@ -82,24 +81,15 @@ class WeatherBot:
     @staticmethod
     def __get_weather_summary(context: LexContext, weather: Weather) -> str:
         if context.now:
-            return "{} °C. {}. Today: {}".format(round(weather.now.temp), weather.now.summary, weather.day.summary)
+            return "{}°C. {}. Today: {}".format(round(weather.now.temp), weather.now.summary, weather.day.summary)
         elif context.time:
-            return '{} °C. {}.'.format(round(weather.now.temp), weather.now.summary)
+            return '{}°C. {}.'.format(round(weather.now.temp), weather.now.summary)
         else:
-            return '{} to {} °C. {}'.format(
+            return '{} to {}°C. {}'.format(
                 round(weather.day.temp_min),
                 round(weather.day.temp_max),
                 weather.day.summary
             )
-
-    def __validate(self, context: LexContext):
-        if not context.city:
-            raise ValidationError(LexContext.SLOT_CITY, Phrases.provide_city())
-
-        if not context.date or context.date == 'now':
-            context.slots[LexContext.SLOT_DATE] = 'now'
-        elif not self.__is_valid_date(context.date):
-            raise ValidationError(LexContext.SLOT_DATE, 'I did not understand date. Could you please enter it again?')
 
     def __geocode(self, context: LexContext):
         try:
@@ -113,14 +103,6 @@ class WeatherBot:
         except KeyError:
             logger.exception("Unable to load location: {}".format(context.address))
             raise ValidationError(LexContext.SLOT_CITY, Phrases.provide_city())
-
-    @staticmethod
-    def __is_valid_date(date: str) -> bool:
-        try:
-            dateutil_parser.parse(date)
-            return True
-        except ValueError:
-            return False
 
 
 class AsyncLoader:

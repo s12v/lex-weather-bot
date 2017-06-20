@@ -1,3 +1,4 @@
+import datetime
 from dateutil import parser as date_parser
 import unittest
 
@@ -51,7 +52,7 @@ class LexContextTest(unittest.TestCase):
                 "inputTranscript": "weather tomorrow evening in Berlin"
             }
         )
-        self.assertEqual(lex.timestamp, date_parser.parse('2017-06-11 19:00').timestamp)
+        self.assertEqual(lex.timestamp, date_parser.parse('2017-06-11 19:00').timestamp())
 
 
     def test_this_evening_buggy(self):
@@ -73,11 +74,11 @@ class LexContextTest(unittest.TestCase):
                         "Area": None,
                         "Time": "HIS EV",
                         "City": "Berlin",
-                        "Date": "2017-06-11"
+                        "Date": None
                     },
                     "confirmationStatus": "None"
                 },
                 "inputTranscript": "weather tomorrow evening in Berlin"
             }
         )
-        self.assertEqual(lex.timestamp, date_parser.parse('2017-06-11 19:00').timestamp)
+        self.assertEqual(lex.timestamp, date_parser.parse('{} 19:00'.format(datetime.datetime.now().strftime('%Y-%m-%d'))).timestamp())

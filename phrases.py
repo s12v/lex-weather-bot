@@ -21,7 +21,7 @@ class Phrases:
     def provide_date() -> str:
         return random.choice([
             'Please provide a date',
-            'When?'
+            'Could you provide a date?'
         ])
 
     @staticmethod

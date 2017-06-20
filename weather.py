@@ -50,7 +50,7 @@ class WeatherSource:
                 timestamp = self.timezone_api.load(context.lat, context.lng, context.timestamp)
             except Exception:
                 logger.exception('Unable to load time zone')
-                timestamp = context.timestamp
+                timestamp = context.timestamp  # Fallback
             url = self.URL_TIME_MACHINE.format(self.api_key, context.lat, context.lng, timestamp)
         logger.debug('DARKSKY: url={}'.format(url))
         data = json.loads(request.urlopen(url).read().decode('utf-8'))

@@ -82,11 +82,11 @@ class WeatherBot:
     @staticmethod
     def __get_weather_summary(context: LexContext, weather: Weather) -> str:
         if context.now:
-            return "{} degrees. {}. Today: {}".format(round(weather.now.temp), weather.now.summary, weather.day.summary)
+            return "{} °C. {}. Today: {}".format(round(weather.now.temp), weather.now.summary, weather.day.summary)
         elif context.time:
-            return '{} degrees. {}.'.format(round(weather.now.temp), weather.now.summary)
+            return '{} °C. {}.'.format(round(weather.now.temp), weather.now.summary)
         else:
-            return '{} to {} degrees. {}'.format(
+            return '{} to {} °C. {}'.format(
                 round(weather.day.temp_min),
                 round(weather.day.temp_max),
                 weather.day.summary

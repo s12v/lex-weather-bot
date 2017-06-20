@@ -54,7 +54,6 @@ class LexContextTest(unittest.TestCase):
         )
         self.assertEqual(lex.timestamp, date_parser.parse('2017-06-11 19:00').timestamp())
 
-
     def test_this_evening_buggy(self):
         lex = LexContext(
             {

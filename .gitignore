@@ -2,3 +2,4 @@
 .serverless
 *.iml
 __pycache__
+/pytz*

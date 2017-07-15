@@ -17,7 +17,7 @@ It uses Google Geocode and Timezone, [DarkSky](https://darksky.net/dev/) weather
 ### Install modules
 
 ```
-python3 -m pip install --target=. pytz
+pip install -r requirements.txt --target=.
 ```
 
 ### Run tests

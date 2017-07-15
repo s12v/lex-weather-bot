@@ -1,6 +1,7 @@
 import logging
 import json
 import threading
+from random import randint
 from typing import Tuple
 
 from phrases import Phrases
@@ -71,7 +72,7 @@ class WeatherBot:
                     {
                         'title': webcam.title,
                         'subTitle': webcam.local_time,
-                        'imageUrl': webcam.thumbnail,
+                        'imageUrl': '{}?{}'.format(webcam.thumbnail, randint(1, 2147483647)),
                         'attachmentLinkUrl': webcam.url,
                     }
                 ]

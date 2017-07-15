@@ -1,5 +1,6 @@
+[![Build Status](https://travis-ci.org/s12v/weather-bot.svg?branch=master)](https://travis-ci.org/s12v/weather-bot)
 
-# Simple Weather Bot
+# Weather Bot
 
 This bot is integrated with Facebook and can: 
  - tell you about current weather conditions in specified place
@@ -9,7 +10,7 @@ This bot is integrated with Facebook and can:
 
 ![Architecture](https://user-images.githubusercontent.com/1462574/27773400-18ac110e-5f79-11e7-9530-46af85fc304a.png)
 
-It uses Google Geocode and Timezone, DarkSky weather, and Webcams.travel APIs.
+It uses Google Geocode and Timezone, [DarkSky](https://darksky.net/dev/) weather, and [Webcams.travel](https://www.webcams.travel/api/) APIs.
 
 ## How to run it
 
